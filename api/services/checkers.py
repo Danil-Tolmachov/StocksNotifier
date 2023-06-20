@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 
-from services.ticker import AbstractTiker
+from services.tickers import AbstractTiker
+from services.subscriptions import AbstractSubscription
 
 
 class DelayMixin():
@@ -20,18 +21,20 @@ class PriceRelatedMixin():
 
 
 class AbstractChecker(ABC):
-    @classmethod
-    async def create(cls, tiker: AbstractTiker):
-        self = cls()
-        self.last_price = await tiker.get_price()
-        self.tiker = tiker
-
-    def check(self) -> bool:
-        return self._condition()
 
     @abstractmethod
     def _condition(self, tiker: AbstractTiker) -> bool:
         pass
+
+    @classmethod
+    async def create(cls, subscription: AbstractSubscription):
+        self = cls()
+        self.tiker: AbstractTiker = subscription.tiker
+        self.last_price = await self.tiker.get_price()
+        self.subscription = None
+
+    def check(self) -> bool:
+        return self._condition()
 
 
 

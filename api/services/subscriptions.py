@@ -1,9 +1,36 @@
 from abc import ABC, abstractmethod
-from services.conditions import AbstractCondition
-from conditions import AbstractCondition
+
+from services.delivery import AbstractDelivery
+from services.checkers import AbstractChecker
+from services.tickers import AbstractTiker
+from database.models import User
 
 
-class AbstractSubscriptionManager(ABC):  
+class AbstractSubscription(ABC):
+    def __init__(self, tiker: AbstractTiker) -> None:
+        self.tiker = tiker
+        super().__init__()
+    
+    @property
+    @abstractmethod
+    def delivery(self):
+        pass
+
+    @property
+    @abstractmethod
+    def subscribers(self):
+        pass
+
+
+    @abstractmethod
+    def create_checker(self) -> AbstractChecker:
+        pass
+
+    @abstractmethod
+    def create_delivery(self) -> AbstractDelivery:
+        pass
+
+
     @abstractmethod
     def subscribe(self):
         pass
@@ -12,59 +39,43 @@ class AbstractSubscriptionManager(ABC):
     def unsubscribe(self):
         pass
 
-
-class EmailSubscriptionManager(AbstractSubscriptionManager):
-    def subscribe(self, email: str):
+    @abstractmethod
+    def send(self):
         pass
 
-    def unsubscribe(self, email: str):
-        pass
-        
 
-class AbstractSubscription(ABC):
-    _instances = []
-
-    def __new__(cls, condition: AbstractCondition):
-
-        for obj in cls._instances:
-            if obj.condition.__class__ == condition:
-                return obj
-
-        new_obj = super().__new__(cls)
-        cls._instances.append(new_obj)
-        return new_obj
-
-    def __init__(self, condition: AbstractCondition, manager: AbstractSubscriptionManager) -> None:
+class IndividualSubscription(AbstractSubscription):
+    def __init__(self, id: int = None) -> None:
         super().__init__()
-        self.condition = condition
-        self.manager = manager
-        self.subscribers = []
 
-    @property
-    @abstractmethod
-    def manager(self) -> AbstractSubscriptionManager:
-        pass
+        if id is not None:
+            self.subscriber: int = id
 
-    @property
-    @abstractmethod
-    def condition(self) -> AbstractCondition:
-        pass
+    def subscribe(self, id: int):
+        self.subscriber = id
 
+    def unsubscribe(self):
+        del self
 
-    @abstractmethod
-    def _send_notification(self) -> bool:
-        """Sends a message about the event"""
-        pass
+    def send(self):
+        self.create_delivery().send()
 
 
-    def notify(self) -> bool:
-        if self.condition.check() == True:
-            self._send_notification()
+class GroupSubscription(AbstractSubscription):
+    def __init__(self, ids: list = None) -> None:
+        super().__init__()
 
+        if ids is not None:
+            self.subscribers: list[int] = ids
 
-class EmailSubscription(AbstractSubscription):
+    def subscribe(self, id: int):
+        self.subscribers.append(id)
 
-    def _send_notification(self):
-        pass
+    def subscribe_many(self, ids: list[int]):
+        self.subscribers.extend(ids)
 
-    
+    def unsubscribe(self, id: int):
+        self.subscribers.remove(id)
+
+    def send(self):
+        self.create_delivery().send()

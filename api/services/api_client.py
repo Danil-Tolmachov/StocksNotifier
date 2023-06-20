@@ -3,7 +3,7 @@ from aiohttp import ClientSession
 from aiohttp.web_exceptions import HTTPNotFound
 import ujson
 
-from services.ticker import AbstractTiker
+from services.tickers import AbstractTiker
 import settings
 
 

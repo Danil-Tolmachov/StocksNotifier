@@ -3,8 +3,7 @@ from aiohttp import ClientSession
 from aiohttp.web_exceptions import HTTPNotFound
 import ujson
 
-from services.tickers import AbstractTiker
-import settings
+from services.abstractions import AbstractTicker
 
 
 
@@ -22,24 +21,25 @@ class AbstractAPIClient(ABC):
         pass
 
     @abstractmethod
-    async def tiker_list(self) -> dict:
+    async def ticker_list(self) -> dict:
         pass
 
     @abstractmethod
-    async def tiker_details(self, tiker: str) -> dict:
+    async def ticker_details(self, ticker: str) -> dict:
         pass
 
 
 class PolygonIoClient(AbstractAPIClient):
-    URL = 'https://api.polygon.io/v3/'
+    URL = 'https://api.polygon.io/'
     
     def get_api_token(self) -> str:
-        return settings.POLYGONIO_API_KEY
+        api_key = 'AVodlDZT9tcJBX3dOgc1VEhPhepXEKKu'
+        return api_key
     
 
-    async def tiker_list(self, tiker: AbstractTiker, session: ClientSession):
+    async def ticker_list(self, ticker: AbstractTicker, session: ClientSession):
         query = f'?apiKey={self.get_api_token()}'
-        request = self.URL + 'reference/tickers/' + query
+        request = self.URL + 'v3/reference/tickers/' + query
 
         async with session.get(request) as response:
 
@@ -49,22 +49,31 @@ class PolygonIoClient(AbstractAPIClient):
             return ujson.loads(await response.text())
         
 
-    async def tiker_details(self, tiker: AbstractTiker, session: ClientSession):
+    async def ticker_details(self, ticker: AbstractTicker, session: ClientSession):
         query = f'?apiKey={self.get_api_token()}'
-        request = self.URL + 'reference/tickers/' + tiker.tiker + query
+        request = self.URL + 'v3/reference/tickers/' + ticker.ticker + query
 
         async with session.get(request) as response:
             
             if response.status == 404:
                 raise HTTPNotFound()
             
+            if response.status >= 500:
+                raise Exception('API client works improperly')
+            
             return ujson.loads(await response.text())
+        
+    async def ticker_price(self, ticker: AbstractTicker, session: ClientSession, type: str = 'c') -> float:
+        query = f'?apiKey={self.get_api_token()}' 
+        request = self.URL + f'v2/aggs/ticker/{ticker.ticker}/prev/' + query
 
-
-# async def main():
-#     cl1 = PolygonIoClient()
-# 
-#     async with ClientSession() as session:
-#         print(await cl1.tiker_details(Tiker('AAPL'), session))
-# 
-# asyncio.run(main())
+        async with session.get(request) as response:
+            
+            if response.status == 404:
+                raise HTTPNotFound()
+            
+            if response.status >= 500:
+                raise Exception('API client works improperly')
+            
+            results = ujson.loads(await response.text())['results']
+            return results[0][type]

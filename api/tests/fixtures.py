@@ -7,7 +7,7 @@ import pytest
 from services.tickers import Ticker
 from services.subscriptions import IndividualSubscription, GroupSubscription
 from services.delivery import EmailDelivery
-from services.abstractions import AbstractChecker
+from services.checkers import EverydayChecker, GrowthChecker, DropChecker
 
 
 #
@@ -23,23 +23,20 @@ def get_subscription():
 
 @pytest.fixture
 def subscriptions_list():
-    subs = []
-    
-    sub1 = IndividualSubscription(Ticker('AAPL'), EmailDelivery(), 1)
-    sub2 = IndividualSubscription(Ticker('AAPL'), EmailDelivery(), 2)
-    sub3 = GroupSubscription(Ticker('AAPL'), EmailDelivery(), [3,])
-    sub4 = GroupSubscription(Ticker('AAPL'), EmailDelivery(), [1, 3])
-
-    subs.extend([sub1, sub2, sub3, sub4])
+    subs = [
+            IndividualSubscription(Ticker('AAPL'), EmailDelivery(), 1),
+            IndividualSubscription(Ticker('AAPL'), EmailDelivery(), 2),
+            GroupSubscription(Ticker('AAPL'), EmailDelivery(), [3,]),
+            GroupSubscription(Ticker('AAPL'), EmailDelivery(), [1, 3])
+        ]
     return subs
 
 @pytest.fixture
-def checkers_list(moker, subscriptions_list):
-    checkers = {}
-
-    moker.patch('Ticker.get_price', 120)
-
-    for key, sub in enumerate(subscriptions_list):
-        checkers.update(key, sub)
-
+def checkers_list(mocker, subscriptions_list):
+    mocker.patch('services.tickers.Ticker.get_price', return_value=110.5)
+    checkers = [
+                EverydayChecker(subscriptions_list[0]),
+                GrowthChecker(subscriptions_list[1]),
+                DropChecker(subscriptions_list[2]),
+            ]
     return checkers

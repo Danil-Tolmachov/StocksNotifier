@@ -1,6 +1,6 @@
 from fixtures import subscriptions_list
 
-from services.checkers import Tiker
+from services.tickers import Ticker
 from services.subscriptions import IndividualSubscription, GroupSubscription
 from services.delivery import EmailDelivery
 
@@ -9,17 +9,17 @@ from services.abstractions import AbstractDelivery, AbstractSubscription
 
 # Individual Subscriptions
 def test_individual_subscription():
-    sub = IndividualSubscription(Tiker('AAPL'), EmailDelivery(), 1)
+    sub = IndividualSubscription(Ticker('AAPL'), EmailDelivery(), 1)
     assert isinstance(sub, IndividualSubscription)
 
-    sub = IndividualSubscription(Tiker('AAPL'), 1)
+    sub = IndividualSubscription(Ticker('AAPL'), 1)
     assert isinstance(sub, IndividualSubscription)
 
-    sub = IndividualSubscription(Tiker('AAPL'))
+    sub = IndividualSubscription(Ticker('AAPL'))
     assert isinstance(sub, IndividualSubscription)
 
 def test_individual_subscription_setters():
-    sub = IndividualSubscription(Tiker('AAPL'))
+    sub = IndividualSubscription(Ticker('AAPL'))
 
     sub.delivery = EmailDelivery()
     assert isinstance(sub.delivery, AbstractDelivery)
@@ -30,17 +30,17 @@ def test_individual_subscription_setters():
 
 # Group Subscriptions
 def test_group_subscription():
-    sub = GroupSubscription(Tiker('AAPL'), EmailDelivery(), [2, 4])
+    sub = GroupSubscription(Ticker('AAPL'), EmailDelivery(), [2, 4])
     assert isinstance(sub, GroupSubscription)
 
-    sub = GroupSubscription(Tiker('AAPL'), [2, 4])
+    sub = GroupSubscription(Ticker('AAPL'), [2, 4])
     assert isinstance(sub, GroupSubscription)
 
-    sub = GroupSubscription(Tiker('AAPL'))
+    sub = GroupSubscription(Ticker('AAPL'))
     assert isinstance(sub, GroupSubscription)
 
 def test_group_subscription_setters():
-    sub = GroupSubscription(Tiker('AAPL'))
+    sub = GroupSubscription(Ticker('AAPL'))
 
     sub.delivery = EmailDelivery()
     assert isinstance(sub.delivery, AbstractDelivery)

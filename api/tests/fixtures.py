@@ -3,6 +3,7 @@ import os.path
 sys.path.append(os.path.curdir.split('api')[0])
 
 import pytest
+from mongomock import MongoClient
 
 from services.tickers import Ticker
 from services.subscriptions import IndividualSubscription, GroupSubscription
@@ -40,3 +41,8 @@ def checkers_list(mocker, subscriptions_list):
                 DropChecker(subscriptions_list[2]),
             ]
     return checkers
+
+@pytest.fixture
+def fake_mongo():
+    return MongoClient()
+

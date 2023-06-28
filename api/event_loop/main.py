@@ -9,9 +9,9 @@ from mongo import checker_instances, checker_types, subscription_types, delivery
 
 
 async def main():
-    initiate_settings()
+    #initiate_settings()
     #checkers = load_checkers()
-    
+    print(checker_types.find({'class': 'GrowthCheckers'})[0]['id'])
     tasks = [
         #append_checkers(checker_instances, checkers, []),
         #pass_checkers(checkers),

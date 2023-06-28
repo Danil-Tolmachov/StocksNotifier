@@ -45,7 +45,7 @@ class EverydayChecker(AbstractChecker):
                                    minute=minutes or 0,
                                    second=seconds or 0)
 
-    async def _condition(self) -> bool:
+    def _condition(self) -> bool:
 
         if datetime.now() > self.delivery_date:
             return True
@@ -66,6 +66,13 @@ class DropChecker(PriceRelatedMixin, AbstractChecker):
 
         return False
     
+    async def send(self, *args, **kwargs) -> bool:
+        if not await self._condition():
+            return False
+        
+        self.subscription.send(self, *args, **kwargs)
+        return True
+    
 
 class GrowthChecker(PriceRelatedMixin, AbstractChecker):
 
@@ -79,3 +86,10 @@ class GrowthChecker(PriceRelatedMixin, AbstractChecker):
             return True
 
         return False
+    
+    async def send(self, *args, **kwargs) -> bool:
+        if not await self._condition():
+            return False
+        
+        self.subscription.send(self, *args, **kwargs)
+        return True

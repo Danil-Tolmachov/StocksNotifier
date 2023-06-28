@@ -1,5 +1,8 @@
 from functools import wraps
+from datetime import datetime, timedelta, date
 import asyncio
+
+from services.exceptions import DiscardedAction
 
 
 def endless_task(delay: int):
@@ -51,6 +54,15 @@ def super_len(obj):
     return i
 
 
+def accept_action(message):
+    warning_message = 'Some users might loose their checkers if you delete/move or change their checker class. \nDo you wand to proceed? Y/N : '
+    if input(f'Delete/move actions detected in {message}. ' + warning_message) in ['Y', 'y']:
+        pass
+    else:
+        raise DiscardedAction()
+        return
+
+
 def check_for_changes(new_collection, old_collection) -> bool:
     """
     Function to check for changes between two collections in pymongo.
@@ -86,3 +98,18 @@ def check_for_changes(new_collection, old_collection) -> bool:
         if instance not in new_collection:
             removal = True
     return removal
+
+def serialize(dic: dict):
+    pass_list = [int, str, list, dict, set, None, datetime, timedelta]
+    remove_list = []
+    copy = dic.copy()
+
+    for key, item in dic.items():
+
+        if item.__class__ not in pass_list:
+            remove_list.append(key)
+            
+    for key in reversed(remove_list):
+        copy.pop(key)
+
+    return copy

@@ -54,9 +54,9 @@ class AbstractSubscription(ABC):
     def subscriber(self, var):
         self.__subscriber = var
 
-    def send(self):
+    def send(self, *args, **kwargs):
         try:
-            self.delivery.send(self)
+            return self.delivery.send(*args, **kwargs)
         except AttributeError:
             raise AttributeError('Create a delivery first!')
 
@@ -88,9 +88,9 @@ class AbstractChecker(ABC):
     def check(self) -> bool:
         return self._condition()
     
-    def send(self) -> bool:
+    def send(self, *args, **kwargs) -> bool:
         if not self._condition():
             return False
         
-        self.subscription.delivery.send(self)
+        self.subscription.send(*args, **kwargs)
         return True

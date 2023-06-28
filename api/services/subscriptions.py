@@ -19,12 +19,12 @@ class IndividualSubscription(AbstractSubscription):
 
 
 class GroupSubscription(AbstractSubscription):
-    def __init__(self, ticker: AbstractTicker, delivery: AbstractDelivery = None,  ids: list = None) -> None:
+    def __init__(self, ticker: AbstractTicker, delivery: AbstractDelivery = None,  id: list = None) -> None:
         self.ticker = ticker
         self.subscriber = []
 
-        if ids is not None:
-            self.subscribe_many(ids)
+        if id is not None:
+            self.subscribe_many(id)
         
         if delivery is not None:
             self.delivery = delivery

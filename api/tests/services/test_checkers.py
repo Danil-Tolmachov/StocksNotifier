@@ -16,12 +16,12 @@ async def test_everyday_checker():
     checker = await EverydayChecker.create(sub)
 
     assert isinstance(checker, AbstractChecker)
-    assert await checker.check() == False
+    assert checker.check() == False
 
     with freeze_time('2023-06-25 12:30:53'):
-        assert await checker.check() == True
+        assert checker.check() == True
         checker.update()
-        assert await checker.check() == False
+        assert checker.check() == False
 
 
 @pytest.mark.asyncio

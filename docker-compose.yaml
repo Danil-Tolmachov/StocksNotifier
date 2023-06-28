@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   mongo:
-    image: mongo
+    image: mongo:latest
     ports:
       - 27017:27017
     environment:
@@ -10,7 +10,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: test
 
   rabbitmq:
-    image: rabbitmq
+    image: rabbitmq:latest
     hostname: rabbitmq
     restart: always
     ports:

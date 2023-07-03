@@ -27,6 +27,11 @@ DATABASE_NAME = env('DATABASE_NAME')
 DATABASE_USER = env('DATABASE_USER')
 DATABASE_PASSWORD = env('DATABASE_PASSWORD')
 
+# RabbitMQ - message broker
+RABBITMQ_USER = env('RABBITMQ_USER')
+RABBITMQ_PASS = env('RABBITMQ_PASS')
+RABBIT_MQ_URL = f'amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@localhost/'
+
 
 # Mongo Structure / Active classes
 #

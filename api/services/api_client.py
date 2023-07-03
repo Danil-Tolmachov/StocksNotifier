@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from aiohttp import ClientSession
 from aiohttp.web_exceptions import HTTPNotFound
 import ujson
+import os
 
 from services.abstractions import AbstractTicker
 
@@ -33,7 +34,7 @@ class PolygonIoClient(AbstractAPIClient):
     URL = 'https://api.polygon.io/'
     
     def get_api_token(self) -> str:
-        api_key = 'AVodlDZT9tcJBX3dOgc1VEhPhepXEKKu'
+        api_key = os.env('POLYGONIO_API_KEY')
         return api_key
     
 

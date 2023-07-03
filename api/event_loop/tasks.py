@@ -1,5 +1,4 @@
 from functools import wraps
-from pymongo import collection
 
 from services.abstractions import AbstractChecker
 from services.checkers import *
@@ -8,7 +7,7 @@ from services.tickers import *
 from services.delivery import *
 from services.exceptions import ConfigurationError, DiscardedAction
 
-from event_loop.utils import check_for_changes, endless_task, super_len, serialize, accept_action
+from event_loop.utils import check_for_changes, endless_task, super_len, serialize_dict, accept_action
 from event_loop.mongo import checker_types as checker_types_collection
 from event_loop.mongo import subscription_types as subscription_collection
 from event_loop.mongo import delivery_types as delivery_collection
@@ -49,7 +48,6 @@ def initiate_settings():
     delivery_collection.insert_many(delivery_types)
 
 async def load_checker(record: dict) -> bool:
-    
     subscription_class: type = None
     checker_class: type = None
 
@@ -90,7 +88,7 @@ async def load_checker(record: dict) -> bool:
 
     return checker_obj
 
-async def load_checkers(collection: collection) -> list[AbstractChecker]:
+async def init_checkers(collection) -> list[AbstractChecker]:
     return_list = []
     cursor = collection.find({})
 
@@ -99,29 +97,28 @@ async def load_checkers(collection: collection) -> list[AbstractChecker]:
 
     return return_list
 
-def save_new_checker(collection: collection, checker: AbstractChecker) -> bool:
-     
+def serialize_checker(collection, checker_obj: AbstractChecker) -> dict:
     try:
-        checker_name = type(checker).__name__
+        checker_name = type(checker_obj).__name__
         checker_id = checker_types_collection.find({'class': checker_name})[0]['id']
     except IndexError:
         raise ValueError(f"You can't use class '{checker_name}', include it to 'Active classes' of settings")
 
     try:
-        subscription_name = type(checker.subscription).__name__
+        subscription_name = type(checker_obj.subscription).__name__
 
         if subscription_name == 'ABCMeta':
-            raise ValueError(f'Setup {type(checker).__name__}.subscription, before saving the checker')
+            raise ValueError(f'Setup {type(checker_obj).__name__}.subscription, before saving the checker')
         
         subscription_id = subscription_collection.find({'class': subscription_name})[0]['id']
     except IndexError:
         raise ValueError(f"You can't use class '{subscription_name}', enable it in 'Active classes' of settings")
         
     try:
-        delivery_name = type(checker.subscription.delivery).__name__
+        delivery_name = type(checker_obj.subscription.delivery).__name__
 
         if delivery_name == 'ABCMeta':
-            raise ValueError(f'Setup {type(checker).__name__}.delivery, before saving the checker')
+            raise ValueError(f'Setup {type(checker_obj).__name__}.delivery, before saving the checker')
 
         delivery_id = delivery_collection.find({'class': delivery_name})[0]['id']
     except IndexError:
@@ -132,28 +129,32 @@ def save_new_checker(collection: collection, checker: AbstractChecker) -> bool:
     except IndexError:
         obj_id = 1
 
-    checker_dict = checker.__dict__
-    checker_dict = serialize(checker_dict)
+    checker_dict = checker_obj.__dict__
+    checker_dict = serialize_dict(checker_dict)
     
-    subscription_dict = checker.__dict__['subscription'].__dict__
-    subscription_dict = serialize(subscription_dict)
+    subscription_dict = checker_obj.__dict__['subscription'].__dict__
+    subscription_dict = serialize_dict(subscription_dict)
 
-    obj = {
+    result = {
         'id': obj_id,
         'checker_type': checker_id,
         'checker_dict': checker_dict,
         'delivery_type': delivery_id,
         'subscription_type': subscription_id,
         'subscription_dict': subscription_dict,
-        'ticker': str(checker.subscription.ticker),
-        'subscriber': checker.subscription.subscriber,
+        'ticker': str(checker_obj.subscription.ticker),
+        'subscriber': checker_obj.subscription.subscriber,
         'active': True,
     }
-    collection.insert_one(obj)  
+    return result
+
+def save_new_checker(collection, checker: AbstractChecker) -> bool:
+    serialized = serialize_checker(collection, checker)
+    collection.insert_one(serialized)  
 
 
 @endless_task(delay=2)
-async def append_checkers(collection: collection, list_obj: list, new_checkers: list) -> None:
+async def append_checkers(collection, list_obj: list, new_checkers: list) -> None:
     for checker in new_checkers:
         save_new_checker(collection, checker)
         list_obj.append(checker)

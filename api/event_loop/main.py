@@ -3,18 +3,22 @@ import sys
 import os.path
 sys.path.append(os.path.curdir.split('api')[0])
 
-from tasks import append_checkers, pass_checkers, initiate_settings, load_checkers
+from tasks import append_checkers, pass_checkers, initiate_settings, init_checkers
 from mongo import checker_instances, checker_types, subscription_types, delivery_types
+from messages import consume_messages
 
 
 
 async def main():
-    #initiate_settings()
-    #checkers = load_checkers()
-    print(checker_types.find({'class': 'GrowthCheckers'})[0]['id'])
+    initiate_settings()
+    checkers = init_checkers(checker_instances)
+
+    checkers_to_append = []
+
     tasks = [
-        #append_checkers(checker_instances, checkers, []),
-        #pass_checkers(checkers),
+        append_checkers(checker_instances, checkers, checkers_to_append),
+        pass_checkers(checkers),
+        consume_messages(checkers, checkers_to_append),
     ]
 
     await asyncio.gather(*tasks)

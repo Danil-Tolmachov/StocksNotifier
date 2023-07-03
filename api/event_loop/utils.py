@@ -99,7 +99,7 @@ def check_for_changes(new_collection, old_collection) -> bool:
             removal = True
     return removal
 
-def serialize(dic: dict):
+def serialize_dict(dic: dict):
     pass_list = [int, str, list, dict, set, None, datetime, timedelta]
     remove_list = []
     copy = dic.copy()

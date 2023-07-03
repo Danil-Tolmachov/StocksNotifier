@@ -6,8 +6,8 @@ from database.models import Base
 
 
 Base.metadata.create_all(engine)
-app = APIRouter()
+router = APIRouter()
 
 
 if __name__ == '__main__':
-    uvicorn.run('main:app', reload=True)
+    uvicorn.run('main:router', reload=True)

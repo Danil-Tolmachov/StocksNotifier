@@ -3,7 +3,7 @@ import pytest
 from fixtures import fake_mongo, initiated_db, subscriptions_list
 from freezegun import freeze_time
 
-from event_loop.tasks import load_checkers, save_new_checker, load_checker
+from event_loop.tasks import init_checkers, save_new_checker, load_checker
 from event_loop.utils import super_len
 from services.delivery import EmailDelivery
 from services.tickers import Ticker
@@ -12,7 +12,7 @@ from services.subscriptions import IndividualSubscription, GroupSubscription
 
 
 @pytest.mark.asyncio
-async def test_load_checkers(fake_mongo, subscriptions_list, initiated_db):
+async def test_init_checkers(fake_mongo, subscriptions_list, initiated_db):
     collection = fake_mongo['db']['checkers']
 
     docs = [
@@ -44,7 +44,7 @@ async def test_load_checkers(fake_mongo, subscriptions_list, initiated_db):
 
     assert super_len(collection.find({})) == 2
 
-    checkers = await load_checkers(collection)
+    checkers = await init_checkers(collection)
 
     assert isinstance(checkers[0], GrowthChecker)
     assert isinstance(checkers[1], EverydayChecker)

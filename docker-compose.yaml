@@ -10,13 +10,14 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: test
 
   rabbitmq:
-    image: rabbitmq:latest
+    image: rabbitmq:management
     hostname: rabbitmq
     restart: always
     ports:
       - 5672:5672
       - 15672:15672
     environment:
+      RABBITMQ_DEFAULT_VHOST: /
       RABBITMQ_DEFAULT_USER: root
       RABBITMQ_DEFAULT_PASS: test
     networks:

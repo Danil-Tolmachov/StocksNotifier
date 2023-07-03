@@ -1,5 +1,6 @@
 from pymongo import MongoClient
-import pickle
+
+from settings import MONGO_USER, MONGO_PASSWORD
 
 client = MongoClient('mongodb://root:test@localhost', 27017)
 

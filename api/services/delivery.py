@@ -1,6 +1,6 @@
 from services.abstractions import AbstractDelivery
 from services.models import User
-import settings
+
 
 class TestDelivery(AbstractDelivery):
     def _send(self, source, *args, **kwargs):

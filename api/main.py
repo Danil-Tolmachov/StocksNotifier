@@ -1,8 +1,8 @@
-from fastapi import APIRouter
+from fastapi import FastAPI
 import uvicorn
 
 
-router = APIRouter()
+api = FastAPI()
 
 
 if __name__ == '__main__':

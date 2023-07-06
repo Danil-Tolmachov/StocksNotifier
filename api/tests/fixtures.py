@@ -4,8 +4,9 @@ sys.path.append(os.path.curdir.split('api')[0])
 
 import pytest
 from mongomock import MongoClient
+from aiohttp import ClientSession
 
-from event_loop.tasks import initiate_settings
+from task_manager.tasks import initiate_settings
 from services.tickers import Ticker
 from services.subscriptions import IndividualSubscription, GroupSubscription
 from services.delivery import EmailDelivery, TestDelivery
@@ -14,6 +15,7 @@ from services.checkers import EverydayChecker, GrowthChecker, DropChecker
 
 #
 # Run pytest from 'api' directory
+# Turn on MongoDB while testing
 #
 # Example:
 # PS C:\Users\user\Desktop\InfoStocksAPI\api> pytest
@@ -28,7 +30,7 @@ def get_checker(get_subscription):
     sub =get_subscription
     sub.subscribe(1)
     sub.delivery = TestDelivery()
-    checker = EverydayChecker.create(sub)
+    checker = EverydayChecker(sub)
     return checker
 
 

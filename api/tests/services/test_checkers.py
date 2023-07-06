@@ -1,5 +1,6 @@
 import pytest
 from freezegun import freeze_time
+from aiohttp import ClientSession
 
 from services.checkers import DropChecker, GrowthChecker, EverydayChecker
 from services.subscriptions import IndividualSubscription
@@ -13,7 +14,7 @@ from services.tickers import Ticker
 async def test_everyday_checker():
     # Create checker
     sub = IndividualSubscription(Ticker('AAPL'), EmailDelivery(), id=4)
-    checker = await EverydayChecker.create(sub)
+    checker = EverydayChecker(sub)
 
     assert isinstance(checker, AbstractChecker)
     assert checker.check() == False
@@ -29,26 +30,28 @@ async def test_everyday_checker():
 async def test_drop_checker(mocker):
     # Create checker
     sub = IndividualSubscription(Ticker('AAPL'), EmailDelivery(), id=4)
-    checker = await DropChecker.create(sub)
+    checker = DropChecker(sub)
 
-    assert isinstance(checker, AbstractChecker)
-    assert await checker.check() == False
-    
-    mocker.patch('services.tickers.Ticker.get_price', return_value=110.5)
-    await checker.update()
-    
-    # Growth/Delay check
-    assert await checker.check() == False
-    mocker.patch('services.tickers.Ticker.get_price', return_value=150.5)
-    await checker.update()
-    assert await checker.check() == False
+    async with ClientSession() as session:
 
-    # Delay check
-    with freeze_time('2023-06-24 22:31:00'):
-        mocker.patch('services.tickers.Ticker.get_price', return_value=50.5)
-        assert await checker.check() == True
-        await checker.update()
-        assert await checker.check() == False
+        assert isinstance(checker, AbstractChecker)
+        assert await checker.check(session) == False
+
+        mocker.patch('services.tickers.Ticker.get_price', return_value=110.5)
+        await checker.update(session)
+
+        # Growth/Delay check
+        assert await checker.check(session) == False
+        mocker.patch('services.tickers.Ticker.get_price', return_value=150.5)
+        await checker.update(session)
+        assert await checker.check(session) == False
+
+        # Delay check
+        with freeze_time('2023-06-24 22:31:00'):
+            mocker.patch('services.tickers.Ticker.get_price', return_value=50.5)
+            assert await checker.check(session) == True
+            await checker.update(session)
+            assert await checker.check(session) == False
 
 
 @pytest.mark.asyncio
@@ -56,22 +59,24 @@ async def test_drop_checker(mocker):
 async def test_growth_checker(mocker):
     sub = IndividualSubscription(Ticker('AAPL'), EmailDelivery(), 4)
 
-    checker = await GrowthChecker.create(sub)
-    assert isinstance(checker, AbstractChecker)
-    assert await checker.check() == False
-    
-    mocker.patch('services.tickers.Ticker.get_price', return_value=110.5)
-    await checker.update()
-    
-    # Growth/Delay check
-    assert await checker.check() == False
-    mocker.patch('services.tickers.Ticker.get_price', return_value=150.5)
-    await checker.update()
-    assert await checker.check() == False
+    async with ClientSession() as session:
 
-    # Delay check
-    with freeze_time('2023-06-24 22:31:00'):
-        mocker.patch('services.tickers.Ticker.get_price', return_value=200.5)
-        assert await checker.check() == True
-        await checker.update()
-        assert await checker.check() == False
+        checker = GrowthChecker(sub)
+        assert isinstance(checker, AbstractChecker)
+        assert await checker.check(session) == False
+
+        mocker.patch('services.tickers.Ticker.get_price', return_value=110.5)
+        await checker.update(session)
+
+        # Growth/Delay check
+        assert await checker.check(session) == False
+        mocker.patch('services.tickers.Ticker.get_price', return_value=150.5)
+        await checker.update(session)
+        assert await checker.check(session) == False
+
+        # Delay check
+        with freeze_time('2023-06-24 22:31:00'):
+            mocker.patch('services.tickers.Ticker.get_price', return_value=200.5)
+            assert await checker.check(session) == True
+            await checker.update(session)
+            assert await checker.check(session) == False

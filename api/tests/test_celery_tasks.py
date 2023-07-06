@@ -3,8 +3,8 @@ import pytest
 from fixtures import fake_mongo, initiated_db, subscriptions_list
 from freezegun import freeze_time
 
-from event_loop.tasks import init_checkers, save_new_checker, load_checker
-from event_loop.utils import super_len
+from task_manager.tasks import init_checkers, save_new_checker, load_checker
+from task_manager.utils import super_len
 from services.delivery import EmailDelivery
 from services.tickers import Ticker
 from services.checkers import EverydayChecker, GrowthChecker
@@ -44,7 +44,7 @@ async def test_init_checkers(fake_mongo, subscriptions_list, initiated_db):
 
     assert super_len(collection.find({})) == 2
 
-    checkers = await init_checkers(collection)
+    checkers = init_checkers(collection)
 
     assert isinstance(checkers[0], GrowthChecker)
     assert isinstance(checkers[1], EverydayChecker)
@@ -70,13 +70,13 @@ async def test_load_checker(fake_mongo, initiated_db):
 
     sub = IndividualSubscription(Ticker('AAPL'), EmailDelivery, 2)
     sub.delivery = EmailDelivery()
-    checker = await EverydayChecker.create(sub)
+    checker = EverydayChecker(sub)
 
     save_new_checker(collection, checker)
     assert super_len(collection.find({})) == 1
 
     raw_checker = collection.find({})[0]
-    result = await load_checker(raw_checker)
+    result = load_checker(raw_checker)
 
     assert isinstance(result, EverydayChecker)
     assert isinstance(result.subscription, IndividualSubscription)
@@ -94,7 +94,7 @@ async def test_save_new_checker(fake_mongo, initiated_db):
 
     sub = IndividualSubscription(Ticker('AAPL'), EmailDelivery(), 2)
     sub.delivery = EmailDelivery()
-    checker = await EverydayChecker.create(sub)
+    checker = EverydayChecker(sub)
     checker.update()
 
     save_new_checker(collection, checker)

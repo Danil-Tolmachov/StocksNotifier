@@ -22,6 +22,8 @@ DEFAULT_EMAIL_TEMPLATE = None
 
 MONGO_USER = env('MONGO_USER')
 MONGO_PASSWORD = env('MONGO_PASSWORD')
+MONGO_URL = f'mongodb://{MONGO_USER}:{MONGO_PASSWORD}@localhost'
+
 
 # RabbitMQ - message broker
 RABBITMQ_USER = env('RABBITMQ_USER')

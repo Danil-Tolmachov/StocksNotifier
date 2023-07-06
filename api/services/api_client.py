@@ -34,7 +34,7 @@ class PolygonIoClient(AbstractAPIClient):
     URL = 'https://api.polygon.io/'
     
     def get_api_token(self) -> str:
-        api_key = os.environ('POLYGONIO_API_KEY')
+        api_key = os.environ['POLYGONIO_API_KEY']
         return api_key
     
 

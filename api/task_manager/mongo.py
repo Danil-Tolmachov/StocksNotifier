@@ -1,8 +1,8 @@
 from pymongo import MongoClient
 
-from settings import MONGO_USER, MONGO_PASSWORD
+from settings import MONGO_URL
 
-client = MongoClient('mongodb://root:test@localhost', 27017)
+client = MongoClient(MONGO_URL, 27017)
 
 db = client['checkers_db']
 

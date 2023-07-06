@@ -18,10 +18,14 @@ services:
       - 15672:15672
     environment:
       RABBITMQ_DEFAULT_VHOST: /
-      RABBITMQ_DEFAULT_USER: root
-      RABBITMQ_DEFAULT_PASS: test
     networks:
       - rabbitmq_net
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - 6379:6379
 
 networks:
   rabbitmq_net:

@@ -3,3 +3,6 @@
 **.pytest_cache
 .vscode
 **.env
+**celerybeat-schedule.bak
+**celerybeat-schedule.dat
+**celerybeat-schedule.dir

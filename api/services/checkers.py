@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from services.abstractions import AbstractChecker
+from services.abstractions import AbstractChecker, AbstractSubscription
 
 
 class DelayMixin():
@@ -20,20 +20,20 @@ class DelayMixin():
 
 class PriceRelatedMixin(DelayMixin):
 
-    async def update(self):
+    async def update(self, session):
         super().update()
-        await self.update_last_price()
+        await self.update_last_price(session)
 
-    async def update_last_price(self):
-        self.last_price = await self.subscription.ticker.get_price()
+    async def update_last_price(self, session):
+        self.last_price = await self.subscription.ticker.get_price(session)
 
 
 
 class EverydayChecker(AbstractChecker):
     delivery_time: datetime = timedelta(hours=12)
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, sub: AbstractSubscription) -> None:
+        super().__init__(sub)
         self.delivery_date = None
         self.update()
 
@@ -45,7 +45,7 @@ class EverydayChecker(AbstractChecker):
                                    minute=minutes or 0,
                                    second=seconds or 0)
 
-    def _condition(self) -> bool:
+    def _condition(self, *args, **kwargs) -> bool:
 
         if datetime.now() > self.delivery_date:
             return True
@@ -55,19 +55,19 @@ class EverydayChecker(AbstractChecker):
 
 class DropChecker(PriceRelatedMixin, AbstractChecker):
 
-    async def _condition(self) -> bool:
+    async def _condition(self, session) -> bool:
         if super()._condition() == False:
             return False
         
-        current_price = await self.ticker.get_price()
+        current_price = await self.ticker.get_price(session)
 
         if current_price < self.last_price:
             return True
 
         return False
-    
-    async def send(self, *args, **kwargs) -> bool:
-        if not await self._condition():
+
+    async def send(self, session, *args, **kwargs) -> bool:
+        if not await self._condition(session):
             return False
         
         self.subscription.send(self, *args, **kwargs)
@@ -76,19 +76,19 @@ class DropChecker(PriceRelatedMixin, AbstractChecker):
 
 class GrowthChecker(PriceRelatedMixin, AbstractChecker):
 
-    async def _condition(self) -> bool:
+    async def _condition(self, session) -> bool:
         if super()._condition() == False:
             return False
         
-        current_price = await self.ticker.get_price()
+        current_price = await self.ticker.get_price(session)
 
         if current_price > self.last_price:
             return True
 
         return False
     
-    async def send(self, *args, **kwargs) -> bool:
-        if not await self._condition():
+    async def send(self, session, *args, **kwargs) -> bool:
+        if not await self._condition(session):
             return False
         
         self.subscription.send(self, *args, **kwargs)

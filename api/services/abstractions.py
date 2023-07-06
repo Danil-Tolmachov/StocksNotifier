@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 
 class AbstractTicker(ABC):
     def __init__(self, ticker: str) -> None:
-        super().__init__()
         self.ticker = ticker
 
     def __str__(self) -> str:
@@ -28,7 +27,6 @@ class AbstractSubscription(ABC):
 
     def __init__(self, ticker: AbstractTicker) -> None:
         self.ticker = ticker
-        super().__init__()
 
     @abstractmethod
     def subscribe(self):
@@ -62,31 +60,24 @@ class AbstractSubscription(ABC):
 
 class AbstractChecker(ABC):
 
-    def __init__(self) -> None:
-        self.ticker: AbstractTicker = None
+    def __init__(self, subscription: AbstractSubscription) -> None:
+        self.ticker: AbstractTicker = subscription.ticker
         self.last_price: int = None
-        self.subscription: AbstractSubscription = None
+        self.subscription: AbstractSubscription = subscription
 
     def __str__(self) -> str:
         return f'({self.__class__}, {id(self)}, {self.ticker})'
 
     @abstractmethod
-    def _condition(self, ticker: AbstractTicker) -> bool:
+    def _condition(self, ticker: AbstractTicker, *args, **kwargs) -> bool:
         pass
 
     @abstractmethod
     def update():
         pass
 
-    @classmethod
-    async def create(cls, subscription: AbstractSubscription):
-        self = cls()
-        self.ticker: AbstractTicker = subscription.ticker
-        self.subscription = subscription
-        return self
-
-    def check(self) -> bool:
-        return self._condition()
+    def check(self, *args, **kwargs) -> bool:
+        return self._condition(*args, **kwargs)
     
     def send(self, *args, **kwargs) -> bool:
         if not self._condition():

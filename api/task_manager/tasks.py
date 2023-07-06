@@ -1,4 +1,5 @@
-from functools import wraps
+import asyncio
+from types import CoroutineType
 
 from services.abstractions import AbstractChecker
 from services.checkers import *
@@ -7,12 +8,74 @@ from services.tickers import *
 from services.delivery import *
 from services.exceptions import ConfigurationError, DiscardedAction
 
-from event_loop.utils import check_for_changes, endless_task, super_len, serialize_dict, accept_action
-from event_loop.mongo import checker_types as checker_types_collection
-from event_loop.mongo import subscription_types as subscription_collection
-from event_loop.mongo import delivery_types as delivery_collection
+from task_manager.utils import check_for_changes, serialize_dict, accept_action, to_datetime_dict_objects
+from task_manager.mongo import checker_instances
+from task_manager.mongo import checker_types as checker_types_collection
+from task_manager.mongo import subscription_types as subscription_collection
+from task_manager.mongo import delivery_types as delivery_collection
+from task_manager.celery_app import app
 
 
+
+
+@app.on_after_configure.connect
+def at_start(sender, **kwargs):
+    initiate_settings()
+
+    checkers = init_checkers(checker_instances)
+    globals().update({'checkers_to_append': []})
+    globals().update({'checkers': checkers})
+
+    sender.add_periodic_task(10.0, append_checkers.s(), name='Append new checkers')
+    sender.add_periodic_task(10.0, pass_checkers.s(), name='Pass through checkers')
+
+
+
+@app.task
+def append_checkers() -> None:
+    collection = checker_instances
+    global checkers
+    global checkers_to_append
+
+    async def func():
+        async with ClientSession() as session:
+            for checker in checkers_to_append: 
+                save_new_checker(collection, checker)
+
+                if type(checker) == CoroutineType:
+                    await checker.update(session)
+                else:
+                    checker.update(session)
+
+                checkers.append(checker)
+    return asyncio.run(func())
+
+@app.task
+def pass_checkers() -> None:
+    
+    async def func():
+        tasks = []
+
+        async def check(checker, session):
+                    if type(checker) == CoroutineType:
+                        if await checker.check(session):
+                            await checker.update(session)
+                            checker.subscription.send()
+                    else:
+                        if checker.check(session):
+                            checker.update(session)
+                            checker.subscription.send()
+
+        async with ClientSession() as session:
+            for checker in checkers:
+                tasks.append(check(checker, session))
+
+            await asyncio.gather(*tasks)
+
+    return asyncio.run(func())
+                        
+
+@app.task
 def initiate_settings():
     try:
         from settings import checker_types, subscription_types, delivery_types
@@ -47,55 +110,62 @@ def initiate_settings():
     subscription_collection.insert_many(subscription_types)
     delivery_collection.insert_many(delivery_types)
 
-async def load_checker(record: dict) -> bool:
+
+@app.task
+def load_checker(record: dict) -> AbstractChecker:
     subscription_class: type = None
     checker_class: type = None
 
     local = {}
 
+    # Get delivery class
     try:
         delivery = delivery_collection.find({'id': record.get('delivery_type')})[0]['class']
     except IndexError:
         broken_id = record['delivery_type']
         print(f"Record with non-exist delivery class detected: id={broken_id}, skiping...")
-        return False
+        return None
     exec(f'delivery_class = {delivery}', globals(), local)
     delivery_class: type = local['delivery_class']
 
+    # Get subscription class
     try:
         sub = subscription_collection.find({'id': record['subscription_type']})[0]['class']
     except IndexError:
         broken_id = record.get('subscription_type')
         print(f"Record with non-exist subscription class detected: id={broken_id}, skiping...")
-        return False
+        return None
     exec(f"subscription_class = {sub}", globals(), local)
     subscription_class: type = local['subscription_class']
 
+    # Get checker class
     try:
         checker = checker_types_collection.find({'id': record['checker_type']})[0]['class']
     except IndexError:
         broken_id = record.get('checker_type')
         print(f"Record with non-exist checker class detected: id={broken_id}, skiping...")
-        return False
+        return None
     exec(f'checker_class = {checker}', globals(), local)
     checker_class: type = local['checker_class']
 
     subscription_obj = subscription_class(Ticker(record.get('ticker')), delivery=delivery_class(), id=record['subscriber'])
-    checker_obj = await checker_class.create(subscription_obj)
+    checker_obj = checker_class(subscription_obj)
 
-    checker_obj.__dict__.update(record['checker_dict'])
-    checker_obj.subscription.__dict__.update(record['subscription_dict'])
+    checker_obj.__dict__.update(to_datetime_dict_objects(record['checker_dict']))
+    checker_obj.subscription.__dict__.update(to_datetime_dict_objects(record['subscription_dict']))
 
     return checker_obj
 
-async def init_checkers(collection) -> list[AbstractChecker]:
+
+def init_checkers(collection) -> list[AbstractChecker]:
     return_list = []
     cursor = collection.find({})
 
     for raw_checker in cursor:
-        return_list.append(await load_checker(raw_checker))
+        return_list.append(load_checker(raw_checker))
 
     return return_list
+
 
 def serialize_checker(collection, checker_obj: AbstractChecker) -> dict:
     try:
@@ -148,22 +218,7 @@ def serialize_checker(collection, checker_obj: AbstractChecker) -> dict:
     }
     return result
 
+@app.task
 def save_new_checker(collection, checker: AbstractChecker) -> bool:
     serialized = serialize_checker(collection, checker)
-    collection.insert_one(serialized)  
-
-
-@endless_task(delay=2)
-async def append_checkers(collection, list_obj: list, new_checkers: list) -> None:
-    for checker in new_checkers:
-        save_new_checker(collection, checker)
-        list_obj.append(checker)
-
-
-@endless_task(delay=5)
-async def pass_checkers(checkers: list[AbstractChecker]):
-    for checker in checkers:
-        if not checker.check():
-            continue
-
-        checker.subscription.send()
+    collection.insert_one(serialized)

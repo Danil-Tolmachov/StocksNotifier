@@ -1,7 +1,5 @@
-from sqlalchemy.orm.exc import NoResultFound
-
-from database.models import EmailTemplate
-from services.abstractions import AbstractChecker, AbstractDelivery
+from services.abstractions import AbstractDelivery
+from services.models import User
 import settings
 
 class TestDelivery(AbstractDelivery):
@@ -9,8 +7,8 @@ class TestDelivery(AbstractDelivery):
         print(f'Delivered notification to {source}, delivery_id:{id(self)}')
 
 class EmailDelivery(AbstractDelivery):
-    def get_template(id: int) -> EmailTemplate:
+    def get_template(id: int):
         pass
 
-    def _send(self, checker: AbstractChecker):
+    def _send(self, user: User):
         pass

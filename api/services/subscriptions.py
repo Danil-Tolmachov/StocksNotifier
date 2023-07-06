@@ -28,10 +28,6 @@ class GroupSubscription(AbstractSubscription):
         
         if delivery is not None:
             self.delivery = delivery
-
-
-    def delivery(self):
-        return self.delivery
     
     def subscribe(self, id: int):
         self.subscriber.append(id)

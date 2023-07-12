@@ -13,3 +13,6 @@ class DiscardedAction(Exception):
 
 class InvalidInstance(Exception):
     pass
+
+class InvalidToken(ValueError):
+    pass

@@ -1,34 +1,41 @@
-from dotenv import load_dotenv
-import os
+from typing import Optional
+from pydantic import BaseSettings
 
 from services.api_client import PolygonIoClient
 
 
-# Environment setup
-def env(var: str):
-    try:
-        return os.environ[var]
-    except KeyError:
-        return None
+
+class Settings(BaseSettings):
+
+    # Cryptography
+    SECRET_KEY: str
+
+    JWT_ALGORITHM: str
+    ACCESS_TOKEN_EXPIRES_IN: int
+    REFRESH_TOKEN_EXPIRES_IN: int
+
+    # Third-party api
+    DATA_API_CLIENT = PolygonIoClient
+
+    # Email template
+    DEFAULT_EMAIL_TEMPLATE: Optional[str]
+
+    # MongoDB
+    MONGO_USER: str
+    MONGO_PASSWORD: str
+    MONGO_URL: str
+
+    # RabbitMQ - message broker
+    RABBITMQ_USER: str
+    RABBITMQ_PASS: str
+    RABBITMQ_URL: str
 
 
-load_dotenv('.env')
+    class Config:
+        env_file = '.env'
 
 
-# Variables
-DATA_API_CLIENT = PolygonIoClient # AbstractAPIClient
-
-DEFAULT_EMAIL_TEMPLATE = None
-
-MONGO_USER = env('MONGO_USER')
-MONGO_PASSWORD = env('MONGO_PASSWORD')
-MONGO_URL = f'mongodb://{MONGO_USER}:{MONGO_PASSWORD}@localhost'
-
-
-# RabbitMQ - message broker
-RABBITMQ_USER = env('RABBITMQ_USER')
-RABBITMQ_PASS = env('RABBITMQ_PASS')
-RABBIT_MQ_URL = f'amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@localhost/'
+settings = Settings()
 
 
 # Mongo Structure / Active classes

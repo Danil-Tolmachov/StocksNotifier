@@ -2,6 +2,7 @@ from fastapi import FastAPI
 import uvicorn
 
 
+import settings
 api = FastAPI()
 
 

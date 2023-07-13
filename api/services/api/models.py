@@ -10,11 +10,21 @@ connect("mongodb://root:test@localhost/checkers_db?authSource=admin", alias='my-
 
 
 class CustomManager(Manager):
-    def create(cls, *args, **kwargs):
-        obj = super().create(*args, **kwargs)
-        if password is not None:
+    def create(cls, **kwargs):
+        username = kwargs.get('username')
+
+        # Username unique check
+        if username is not None:
+            if isinstance(cls.objects.get({'username': username}), MongoModel):
+                raise ValueError('Username field is not unique')
+
+        obj = super().create(**kwargs)
+
+        # Hashing password
+        if obj.password is not None:
             password = obj.password
             obj.password = hash_password(password)
+
         obj.save()
 
 

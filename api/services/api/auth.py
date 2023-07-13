@@ -16,7 +16,7 @@ refresh_expire = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRES_IN)
 
 
 #
-# Create tokens
+#   Create tokens
 #
 
 def create_access_token(user: Union[User, Developer], expire_delta: timedelta = access_expire) -> Tuple[str, datetime]:
@@ -47,8 +47,30 @@ def create_refresh_token(access_token: str, expire_delta: timedelta = refresh_ex
     return jwt.encode(payload, secret, algorithm), expiration
 
 
+def create_tokens(user: Union[User, Developer]):
+    # Tokens expiration
+    access_expire_delta: timedelta = access_expire
+    refresh_expire_delta: timedelta = refresh_expire
+    
+    # Create tokens
+    access_token, access_exp = create_access_token(user, expire_delta=access_expire_delta)
+    refresh_token, refresh_exp = create_refresh_token(access_token, expire_delta=refresh_expire_delta)
+
+    result = {
+        'access': {
+            'token': access_token,
+            'exp': access_exp,
+        },
+        'refresh': {
+            'token': refresh_token,
+            'exp': refresh_exp,
+        },
+    }
+    return result
+
+
 #
-# Authentication and authorization
+#   Authentication and authorization
 #
 
 def authenticate_token(token: str) -> Union[User, Developer]:
@@ -92,22 +114,13 @@ def authorization(username: str, password: str, is_developer: bool = True) -> di
     if obj is None:
         return None
 
-    # Tokens expiration
-    access_expire_delta: timedelta = access_expire
-    refresh_expire_delta: timedelta = refresh_expire
-    
-    # Create tokens
-    access_token, access_exp = create_access_token(obj, expire_delta=access_expire_delta)
-    refresh_token, refresh_exp = create_refresh_token(access_token, expire_delta=refresh_expire_delta)
+    return create_tokens(obj)
 
-    result = {
-        'access': {
-            'token': access_token,
-            'exp': access_exp,
-        },
-        'refresh': {
-            'token': refresh_token,
-            'exp': refresh_exp,
-        },
-    }
-    return result
+
+#
+#   Register
+#
+
+
+def create_subscriber() -> User:
+    pass

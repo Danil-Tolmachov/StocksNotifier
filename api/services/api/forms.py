@@ -4,7 +4,10 @@ from re import match
 
 
 class UserForm(BaseModel):
-    id: int
+    id: Optional[int]
+
+    username: str
+    password: str
 
     email: EmailStr
     phone: str
@@ -28,12 +31,11 @@ class UserForm(BaseModel):
         return phone_value
     
 
-class Consumer():
-    id: int
+class DeveloperForm(BaseModel):
+    id: Optional[int]
 
     username: str
     password: str
 
-    users: list
-    access_level: int
+    users: Optional[list]
     template: Optional[None]

@@ -3,7 +3,6 @@ from starlette import status
 
 from services.api.auth import create_tokens, authenticate
 from services.api.models import User, Developer
-from services.api.forms import DeveloperForm, UserForm
 
 
 router = APIRouter(
@@ -13,13 +12,13 @@ router = APIRouter(
 
 
 @router.post('/developer/register')
-def register_developer(dev: DeveloperForm):
-    obj = Developer.objects.create(username=dev.username, password=dev.password)
+def register_developer(username: str = Form(), password: str = Form()):
+    obj = Developer.objects.create(username=username, password=password)
     return Response(status_code=status.HTTP_201_CREATED)
 
 @router.post('/user/register')
-def register_user(user: UserForm):
-    obj = User.objects.create(username=user.username, password=user.password)
+def register_user(username: str = Form(), password: str = Form()):
+    obj = User.objects.create(username=username, password=password)
     return Response(status_code=status.HTTP_201_CREATED)
 
 
@@ -42,6 +41,10 @@ def login_user(username: str = Form(), password: str = Form()):
     return create_tokens(user)
 
 
-@router.delete('/developer/delete')
+@router.delete('/developer')
 def delete_developer():
+    pass
+
+@router.delete('/user')
+def delete_user():
     pass

@@ -15,8 +15,11 @@ class CustomManager(Manager):
 
         # Username unique check
         if username is not None:
-            if isinstance(cls.objects.get({'username': username}), MongoModel):
-                raise ValueError('Username field is not unique')
+            try:
+                if isinstance(cls.get({'username': username}), MongoModel):
+                    raise ValueError('Username field is not unique')
+            except:
+                pass
 
         obj = super().create(**kwargs)
 
@@ -38,14 +41,14 @@ class User(MongoModel):
     phone = fields.CharField()
 
     consumer_id = fields.IntegerField() # Relation user to developer
-    external_id = fields.IntegerField() # User id that consumer uses in their own DBs
+    external_id = fields.IntegerField() # User id that consumer uses in their own DBs   
 
     objects = CustomManager()
 
     class Meta:
         write_concern = WriteConcern(j=True)
         connection_alias = 'my-app'
-
+        
     @classmethod
     def get_next_id(cls):
         # Get the highest existing ID
@@ -60,8 +63,7 @@ class User(MongoModel):
             self.id = self.get_next_id()
         return super(User, self).save(*args, **kwargs)
 
-
-class Developer():
+class Developer(MongoModel):
     id = fields.IntegerField(primary_key=True)
 
     username = fields.CharField()

@@ -74,7 +74,7 @@ def create_tokens(user: Union[User, Developer]):
 #
 
 def authenticate_token(token: str) -> Union[User, Developer]:
-    data = jwt.decode(token)
+    data = jwt.decode(token, secret, algorithm)
     id = data.get('id')
     is_developer = data.get('is_developer')
 

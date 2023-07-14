@@ -1,5 +1,5 @@
 from services.abstractions import AbstractDelivery
-from services.models import User
+from services.api.models import User
 
 
 class TestDelivery(AbstractDelivery):

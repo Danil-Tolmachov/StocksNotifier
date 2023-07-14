@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Form, Response
+from fastapi.params import Depends
 from starlette import status
 
+from services.api.dependencies import get_auth
 from services.api.auth import create_tokens, authenticate
 from services.api.models import User, Developer
 
@@ -41,10 +43,16 @@ def login_user(username: str = Form(), password: str = Form()):
     return create_tokens(user)
 
 
-@router.delete('/developer')
-def delete_developer():
-    pass
+@router.delete('/developer/account')
+def delete_developer(user = Depends(get_auth)):
+    if Developer.objects.raw({'username': user.username}).delete():
+        return Response(status_code=status.HTTP_200_OK)
 
-@router.delete('/user')
-def delete_user():
-    pass
+    return Response(status_code=status.HTTP_400_BAD_REQUEST)
+
+@router.delete('/user/account')
+def delete_user(user = Depends(get_auth)):
+    if User.objects.raw({'username': user.username}).delete():
+        return Response(status_code=status.HTTP_200_OK)
+    
+    return Response(status_code=status.HTTP_400_BAD_REQUEST)

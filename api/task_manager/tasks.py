@@ -20,8 +20,10 @@ from task_manager.celery_app import app
 
 @app.on_after_configure.connect
 def at_start(sender, **kwargs):
+    # Initiate classes schema from settings.py
     initiate_settings()
 
+    # Initiate checkers from db
     checkers = init_checkers(checker_instances)
     globals().update({'checkers_to_append': []})
     globals().update({'checkers': checkers})
@@ -33,6 +35,10 @@ def at_start(sender, **kwargs):
 
 @app.task
 def append_checkers() -> None:
+    """
+        Asynchronously appends checkers to the collection, and adds to the global 'checkers' list.
+        Uses 'checkers_to_append' global list instance.
+    """
     collection = checker_instances
     global checkers
     global checkers_to_append
@@ -52,6 +58,10 @@ def append_checkers() -> None:
 
 @app.task
 def pass_checkers() -> None:
+    """
+        Asynchronously checks and updates the checkers(if check method returns True).
+        Uses checker.subscription.send() if the check is successful.
+    """
     
     async def func():
         tasks = []
@@ -77,6 +87,13 @@ def pass_checkers() -> None:
 
 @app.task
 def initiate_settings():
+    """
+        Initializes the classes settings by validating and applying the provided configurations.
+
+        Raises:
+            ConfigurationError: If any of the required settings (checker_types, subscription_types, delivery_types) are missing or empty.
+            DiscardedAction: If a change is detected but is discarded due to an accept action.
+    """
     try:
         from settings import checker_types, subscription_types, delivery_types
 
@@ -113,6 +130,33 @@ def initiate_settings():
 
 @app.task
 def load_checker(record: dict) -> AbstractChecker:
+    """
+        Loads and initializes a checker object based on the provided record dict.
+
+        Args:
+            record (dict): The record containing information about the checker.
+
+        Returns:
+            AbstractChecker: The initialized checker object.
+    """
+
+    #
+    # Record example:
+    #
+    # {
+    #     'id': 1,
+    #     'checker_type': 2,
+    #     'dict': {
+    #         'last_price': 110
+    #     },
+    #     'delivery_type': 1,
+    #     'subscription_type': 1,
+    #     'ticker': 'AAPL',
+    #     'subscriber': 1,
+    #     'active': True,
+    # },
+    #
+    
     subscription_class: type = None
     checker_class: type = None
 
@@ -148,9 +192,11 @@ def load_checker(record: dict) -> AbstractChecker:
     exec(f'checker_class = {checker}', globals(), local)
     checker_class: type = local['checker_class']
 
+    # Create subscription object
     subscription_obj = subscription_class(Ticker(record.get('ticker')), delivery=delivery_class(), id=record['subscriber'])
     checker_obj = checker_class(subscription_obj)
 
+    # Create checker object
     checker_obj.__dict__.update(to_datetime_dict_objects(record['checker_dict']))
     checker_obj.subscription.__dict__.update(to_datetime_dict_objects(record['subscription_dict']))
 
@@ -158,6 +204,15 @@ def load_checker(record: dict) -> AbstractChecker:
 
 
 def init_checkers(collection) -> list[AbstractChecker]:
+    """
+        Loads and initializes a checkers list object based on the provided records.
+    
+        Args:
+            collection (MongoDB collection): The records containing information about the checkers.
+    
+        Returns:
+            list[AbstractChecker]: The initialized checkers list object.
+    """
     return_list = []
     cursor = collection.find({})
 
@@ -168,6 +223,20 @@ def init_checkers(collection) -> list[AbstractChecker]:
 
 
 def serialize_checker(collection, checker_obj: AbstractChecker) -> dict:
+    """
+        Serializes the provided checker object into a dictionary for storage in the given collection.
+
+        Args:
+            collection: The collection where the serialized checker will be stored.
+            checker_obj (AbstractChecker): The checker object to serialize.
+
+        Returns:
+            dict: The serialized checker object as a dictionary.
+
+        Raises:
+            ValueError: If the checker_obj or its related classes are not included or enabled in the settings.py.
+    """
+     
     try:
         checker_name = type(checker_obj).__name__
         checker_id = checker_types_collection.find({'class': checker_name})[0]['id']
@@ -219,6 +288,13 @@ def serialize_checker(collection, checker_obj: AbstractChecker) -> dict:
     return result
 
 @app.task
-def save_new_checker(collection, checker: AbstractChecker) -> bool:
+def save_new_checker(collection, checker: AbstractChecker) -> None:
+    """
+        Serializes and saves the provided checker object into the given collection.
+    
+        Args:
+            collection: The collection where the checker will be saved.
+            checker (AbstractChecker): The checker object to save.
+    """
     serialized = serialize_checker(collection, checker)
     collection.insert_one(serialized)

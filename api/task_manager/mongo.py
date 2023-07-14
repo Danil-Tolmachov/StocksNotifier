@@ -1,8 +1,8 @@
 from pymongo import MongoClient
 
-from settings import MONGO_URL
+from settings import settings
 
-client = MongoClient(MONGO_URL, 27017)
+client = MongoClient(settings.MONGO_URL, 27017)
 
 db = client['checkers_db']
 
@@ -10,6 +10,9 @@ checker_types = db['checker_types']
 delivery_types = db['delivery_types']
 subscription_types = db['subsctiption_types']
 checker_instances = db['checkers']
+
+developer_instances = db['developer']
+user_instances = db['user']
 
 
 checker_instances_example = [

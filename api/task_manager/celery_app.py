@@ -1,14 +1,12 @@
-import logging
 from celery import Celery
-from datetime import timedelta
 from dotenv import load_dotenv
-import os, asyncio
+import os
 
-from task_manager.mongo import checker_instances
 
 load_dotenv('.env')
 
 checkers = []
+checkers_to_append = []
 
 
 broker = os.environ['CELERY_BROKER']

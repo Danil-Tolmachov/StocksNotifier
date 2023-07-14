@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     # Email template
     DEFAULT_EMAIL_TEMPLATE: Optional[str]
 
+    # Celery
+    CELERY_BROKER: str
+    CELERY_IMPORTS: list = ['tasks',]
+    RESULT_BACKEND: str
+
     # MongoDB
     MONGO_USER: str
     MONGO_PASSWORD: str
@@ -30,9 +35,21 @@ class Settings(BaseSettings):
     RABBITMQ_PASS: str
     RABBITMQ_URL: str
 
+    # SMTP mailing
+    SMTP_HOST = 'smtp.gmail.com'
+    SMTP_USE_TLS = False
+    SMTP_PORT = 465
+    SMTP_USE_SSL = True
+
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+
 
     class Config:
         env_file = '.env'
+
+    def get_api_client(self):
+        return self.DATA_API_CLIENT
 
 
 settings = Settings()

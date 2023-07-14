@@ -29,7 +29,7 @@ def at_start(sender, **kwargs):
     globals().update({'checkers': checkers})
 
     sender.add_periodic_task(10.0, append_checkers.s(), name='Append new checkers')
-    sender.add_periodic_task(10.0, pass_checkers.s(), name='Pass through checkers')
+    sender.add_periodic_task(10.0, pass_checkers.s(), name='Pass through checkers')    
 
 
 
@@ -67,14 +67,14 @@ def pass_checkers() -> None:
         tasks = []
 
         async def check(checker, session):
-                    if type(checker) == CoroutineType:
-                        if await checker.check(session):
-                            await checker.update(session)
-                            checker.subscription.send()
-                    else:
-                        if checker.check(session):
-                            checker.update(session)
-                            checker.subscription.send()
+            check_result = checker.check(session)
+            if isinstance(check_result, CoroutineType):
+                if await check_result:
+                    await checker.update(session)
+            else:
+                if checker.check(session):
+                    checker.update(session)
+            checker.subscription.send()
 
         async with ClientSession() as session:
             for checker in checkers:

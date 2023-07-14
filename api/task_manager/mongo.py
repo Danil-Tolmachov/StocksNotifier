@@ -11,9 +11,6 @@ delivery_types = db['delivery_types']
 subscription_types = db['subsctiption_types']
 checker_instances = db['checkers']
 
-developer_instances = db['developer']
-user_instances = db['user']
-
 
 checker_instances_example = [
     {

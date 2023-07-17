@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from services.api.models import User
+
 
 class AbstractTicker(ABC):
     def __init__(self, ticker: str) -> None:
@@ -14,6 +16,11 @@ class AbstractTicker(ABC):
 
 
 class AbstractDelivery(ABC):
+
+    def __init__(self, user: User) -> None:
+        super().__init__()
+        self.user = user
+
     @abstractmethod
     def _send(self):
         """Sends a message about the event"""

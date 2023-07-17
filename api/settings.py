@@ -17,9 +17,6 @@ class Settings(BaseSettings):
     # Third-party api
     DATA_API_CLIENT = PolygonIoClient
 
-    # Email template
-    DEFAULT_EMAIL_TEMPLATE: Optional[str]
-
     # Celery
     CELERY_BROKER: str
     CELERY_IMPORTS: list = ['tasks',]
@@ -47,6 +44,9 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = '.env'
+
+    def get_default_template():
+        pass # TODO
 
     def get_api_client(self):
         return self.DATA_API_CLIENT

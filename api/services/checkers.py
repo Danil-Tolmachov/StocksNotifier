@@ -51,6 +51,17 @@ class EverydayChecker(AbstractChecker):
             return True
 
         return False
+    
+    async def send(self, session, *args, **kwargs) -> bool:
+        if not self._condition(session):
+            return False
+        
+        self.subscription.send(self,
+                               *args,
+                               ticker = str(self.ticker), 
+                               subject = f'Your everyday ticker check: {str(self.ticker)}', 
+                               **kwargs)
+        return True
 
 
 class DropChecker(PriceRelatedMixin, AbstractChecker):
@@ -70,7 +81,11 @@ class DropChecker(PriceRelatedMixin, AbstractChecker):
         if not await self._condition(session):
             return False
         
-        self.subscription.send(self, *args, **kwargs)
+        self.subscription.send(self,
+                               *args,
+                               ticker = str(self.ticker), 
+                               subject = f'Ticker has droped: {str(self.ticker)}', 
+                               **kwargs)
         return True
     
 
@@ -91,5 +106,9 @@ class GrowthChecker(PriceRelatedMixin, AbstractChecker):
         if not await self._condition(session):
             return False
         
-        self.subscription.send(self, *args, **kwargs)
+        self.subscription.send(self,
+                               *args,
+                               ticker = str(self.ticker), 
+                               subject = f'Ticker has increased: {str(self.ticker)}', 
+                               **kwargs)
         return True

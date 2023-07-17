@@ -40,7 +40,7 @@ class User(MongoModel):
     email = fields.EmailField()
     phone = fields.CharField()
 
-    consumer_id = fields.IntegerField() # Relation user to developer
+    developer_id = fields.IntegerField() # Relation user to developer
     external_id = fields.IntegerField() # User id that consumer uses in their own DBs   
 
     objects = CustomManager()

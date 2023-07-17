@@ -5,7 +5,6 @@ from typing import Tuple, Union
 from services.exceptions import InvalidToken
 from services.api.models import User, Developer 
 from services.api.utils import validate_password
-from mongo import developer_instances, user_instances
 from settings import settings
 
 
